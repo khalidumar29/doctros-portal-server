@@ -24,12 +24,32 @@ const run = async () => {
     const serviceCollection = client
       .db("doctros_portal")
       .collection("services");
+    const bookingsCollection = client
+      .db("doctros_portal")
+      .collection("bookings");
+
     /** get all api */
     app.get("/service", async (req, res) => {
       const query = {};
       const cursor = serviceCollection.find(query);
       const services = await cursor.toArray();
       res.send(services);
+    });
+
+    /** inser api  */
+    app.post("/booking", async (req, res) => {
+      const booking = req.body;
+      const query = {
+        treatment: booking.treatmentName,
+        date: booking.date,
+        patient: booking.patient,
+      };
+      const exixts = await bookingsCollection.findOne(query);
+      if (exixts) {
+        return res.send({ success: false, booking: exixts });
+      }
+      const result = await bookingsCollection.insertOne(booking);
+      return res.send({ success: true, result });
     });
   } finally {
     /** nothing to happen here */
