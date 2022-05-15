@@ -36,7 +36,7 @@ const run = async () => {
       res.send(services);
     });
 
-    /**  */
+    /** Avaiable treatment base on date and slots */
 
     app.get("/avaiableServices", async (req, res) => {
       const date = req.query.date;
@@ -54,6 +54,14 @@ const run = async () => {
         service.slots = available;
       });
       res.send(services);
+    });
+
+    /** get booking  */
+    app.get("/booking", async (req, res) => {
+      const patient = req.query.patient;
+      const query = { patient: patient };
+      const bookings = await bookingsCollection.find(query).toArray();
+      res.send(bookings);
     });
 
     /** insert api  */
