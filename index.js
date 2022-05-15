@@ -36,19 +36,40 @@ const run = async () => {
       res.send(services);
     });
 
-    /** inser api  */
+    /**  */
+
+    app.get("/avaiableServices", async (req, res) => {
+      const date = req.query.date;
+      const services = await serviceCollection.find().toArray();
+      const query = { date: date };
+      const bookings = await bookingsCollection.find(query).toArray();
+      services.forEach((service) => {
+        const serviceBookings = bookings.filter(
+          (book) => book.treatment === service.name
+        );
+        const bookedSlots = serviceBookings.map((book) => book.slot);
+        const available = service.slots.filter(
+          (slot) => !bookedSlots.includes(slot)
+        );
+        service.slots = available;
+      });
+      res.send(services);
+    });
+
+    /** insert api  */
     app.post("/booking", async (req, res) => {
       const booking = req.body;
       const query = {
-        treatment: booking.treatmentName,
+        treatment: booking.treatment,
         date: booking.date,
         patient: booking.patient,
       };
-      const exixts = await bookingsCollection.findOne(query);
-      if (exixts) {
-        return res.send({ success: false, booking: exixts });
+      const exists = await bookingsCollection.findOne(query);
+      if (exists) {
+        return res.send({ success: false, booking: exists });
       }
       const result = await bookingsCollection.insertOne(booking);
+
       return res.send({ success: true, result });
     });
   } finally {
