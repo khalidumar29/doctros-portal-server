@@ -47,6 +47,19 @@ const run = async () => {
     const userCollection = client.db("doctros_portal").collection("users");
     const doctorCollection = client.db("doctros_portal").collection("doctors");
 
+    /** admin verification function */
+    const verifyAdmin = async (req, res, next) => {
+      const requester = req.decoded.email;
+      const requesterAccount = await userCollection.findOne({
+        email: requester,
+      });
+      if (requesterAccount.role === "admin") {
+        next();
+      } else {
+        res.status(403).send({ message: "forbidden access" });
+      }
+    };
+
     /** get all api */
     app.get("/service", async (req, res) => {
       const query = {};
@@ -86,22 +99,14 @@ const run = async () => {
     });
 
     /** make an user to admin */
-    app.put("/user/admin/:email", verifyJwt, async (req, res) => {
+    app.put("/user/admin/:email", verifyJwt, verifyAdmin, async (req, res) => {
       const email = req.params.email;
-      const requester = req.decoded.email;
-      const requesterAccount = await userCollection.findOne({
-        email: requester,
-      });
-      if (requesterAccount.role === "admin") {
-        const filter = { email };
-        const updateDoc = {
-          $set: { role: "admin" },
-        };
-        const result = await userCollection.updateOne(filter, updateDoc);
-        res.send(result);
-      } else {
-        res.status(403).send({ message: "Forbidden" });
-      }
+      const filter = { email };
+      const updateDoc = {
+        $set: { role: "admin" },
+      };
+      const result = await userCollection.updateOne(filter, updateDoc);
+      res.send(result);
     });
 
     /** Avaiable treatment base on date and slots */
@@ -159,6 +164,12 @@ const run = async () => {
       const doctor = req.body;
       const result = await doctorCollection.insertOne(doctor);
       res.send(result);
+    });
+
+    /** get all doctor */
+    app.get("/doctor", async (req, res) => {
+      const doctors = await doctorCollection.find().toArray();
+      res.send(doctors);
     });
   } finally {
     /** nothing to happen here */
