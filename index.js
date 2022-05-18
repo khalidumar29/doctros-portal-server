@@ -171,6 +171,14 @@ const run = async () => {
       const doctors = await doctorCollection.find().toArray();
       res.send(doctors);
     });
+
+    /** DELETE DOCTOR */
+    app.delete("/doctor/:email", async (req, res) => {
+      const email = req.params.email;
+      const filter = { email: email };
+      const result = await doctorCollection.deleteOne(filter);
+      res.send(result);
+    });
   } finally {
     /** nothing to happen here */
   }
