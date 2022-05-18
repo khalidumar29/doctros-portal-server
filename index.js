@@ -1,4 +1,6 @@
 const { MongoClient, ServerApiVersion } = require("mongodb");
+const nodemailer = require("nodemailer");
+const sgTransport = require("nodemailer-sendgrid-transport");
 const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
@@ -32,6 +34,11 @@ const verifyJwt = (req, res, next) => {
     req.decoded = decoded;
     next();
   });
+};
+
+/** sendgrid email send function using nodemailer */
+const senAppointmentEmail = (booking) => {
+  const {} = booking;
 };
 
 /** api operation */
@@ -155,7 +162,7 @@ const run = async () => {
         return res.send({ success: false, booking: exists });
       }
       const result = await bookingsCollection.insertOne(booking);
-
+      senAppointmentEmail(booking);
       return res.send({ success: true, result });
     });
 
