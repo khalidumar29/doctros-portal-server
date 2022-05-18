@@ -1,4 +1,4 @@
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const nodemailer = require("nodemailer");
 const sgTransport = require("nodemailer-sendgrid-transport");
 const express = require("express");
@@ -27,6 +27,7 @@ const verifyJwt = (req, res, next) => {
     return res.status(401).send({ message: "Unatohorized access" });
   }
   const token = authHeader.split(" ")[1];
+
   jwt.verify(token, process.env.ACCES_TOKEN_SECRET, (err, decoded) => {
     if (err) {
       return res.status(403).send({ message: "Forbidden access" });
@@ -179,6 +180,14 @@ const run = async () => {
       } else {
         return res.status(403).send({ message: "Forbidden access" });
       }
+    });
+
+    /** get booking useing id */
+    app.get("/booking/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const booking = await bookingsCollection.findOne(query);
+      res.send(booking);
     });
 
     /** insert api  */
