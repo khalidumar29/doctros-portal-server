@@ -36,9 +36,41 @@ const verifyJwt = (req, res, next) => {
   });
 };
 
+/** nodemailer client setup */
+const emailSenderOption = {
+  auth: {
+    api_key: process.env.EMAIL_SENDER_KEY,
+  },
+};
+const emailClient = nodemailer.createTransport(sgTransport(emailSenderOption));
+
 /** sendgrid email send function using nodemailer */
 const senAppointmentEmail = (booking) => {
-  const {} = booking;
+  const { patient, patientName, treatment, date, slot } = booking;
+  const email = {
+    from: process.env.EMAIL_SENDER,
+    to: patient,
+    subject: `Your Appointment for ${treatment} is on at ${slot} is Confirmd`,
+    text: "`Your Appointment for ${treatment} is on at ${slot} is Confirmd`",
+    html: `
+    <div>
+    <p>Hello, ${patient}</p>
+    <h3>Your Appointment for ${treatment} is confirmd</h3>
+    <p>Looking for forward to seeing you on ${date} at ${slot}.</p>
+    <h3>Our Address</h3>
+    <p>Andor killa bandor bon</p>
+    <p>Bangladesh</p>
+    <a href="https://google.com">Unsubscribe</a>
+    </div>
+    `,
+  };
+  emailClient.sendMail(email, (err, info) => {
+    if (err) {
+      console.log(err);
+    } else {
+      console.log("Message sent: ", info);
+    }
+  });
 };
 
 /** api operation */
