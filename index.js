@@ -199,20 +199,20 @@ const run = async () => {
     });
 
     /** post doctor  */
-    app.post("/doctor", async (req, res) => {
+    app.post("/doctor", verifyJwt, verifyAdmin, async (req, res) => {
       const doctor = req.body;
       const result = await doctorCollection.insertOne(doctor);
       res.send(result);
     });
 
     /** get all doctor */
-    app.get("/doctor", async (req, res) => {
+    app.get("/doctor", verifyJwt, verifyAdmin, async (req, res) => {
       const doctors = await doctorCollection.find().toArray();
       res.send(doctors);
     });
 
     /** DELETE DOCTOR */
-    app.delete("/doctor/:email", async (req, res) => {
+    app.delete("/doctor/:email", verifyJwt, verifyAdmin, async (req, res) => {
       const email = req.params.email;
       const filter = { email: email };
       const result = await doctorCollection.deleteOne(filter);
