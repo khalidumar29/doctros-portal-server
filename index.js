@@ -4,7 +4,9 @@ const sgTransport = require("nodemailer-sendgrid-transport");
 const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
+const res = require("express/lib/response");
 require("dotenv").config();
+const stripe = require("stripe")(process.env.STRIPE_SECRATE_KEY);
 const app = express();
 const port = process.env.PORT || 3100;
 
@@ -46,7 +48,7 @@ const emailSenderOption = {
 const emailClient = nodemailer.createTransport(sgTransport(emailSenderOption));
 
 /** sendgrid email send function using nodemailer */
-const senAppointmentEmail = (booking) => {
+const sendAppointmentEmail = (booking) => {
   const { patient, patientName, treatment, date, slot } = booking;
   const email = {
     from: process.env.EMAIL_SENDER,
@@ -57,6 +59,36 @@ const senAppointmentEmail = (booking) => {
     <div>
     <p>Hello, ${patient}</p>
     <h3>Your Appointment for ${treatment} is confirmd</h3>
+    <p>Looking for forward to seeing you on ${date} at ${slot}.</p>
+    <h3>Our Address</h3>
+    <p>Andor killa bandor bon</p>
+    <p>Bangladesh</p>
+    <a href="https://google.com">Unsubscribe</a>
+    </div>
+    `,
+  };
+  emailClient.sendMail(email, (err, info) => {
+    if (err) {
+      console.log(err);
+    } else {
+      console.log("Message sent: ", info);
+    }
+  });
+};
+
+/** sendgrid email send for transaction id  */
+const paymentConfirmtionEmail = (booking) => {
+  const { patient, patientName, treatment, date, slot } = booking;
+  const email = {
+    from: process.env.EMAIL_SENDER,
+    to: patient,
+    subject: `we have recievied payment for ${treatment} is on at ${slot} is Confirmd`,
+    text: `Your Appointment for ${treatment} is on at ${slot} is Confirmd`,
+    html: `
+    <div>
+    <p>Hello, ${patient}</p>
+    <h3>thanks for your payment.</h3>
+    <h3>we have recevied your payment.</h3>
     <p>Looking for forward to seeing you on ${date} at ${slot}.</p>
     <h3>Our Address</h3>
     <p>Andor killa bandor bon</p>
@@ -86,6 +118,9 @@ const run = async () => {
       .collection("bookings");
     const userCollection = client.db("doctros_portal").collection("users");
     const doctorCollection = client.db("doctros_portal").collection("doctors");
+    const paymentCollection = client
+      .db("doctros_portal")
+      .collection("payments");
 
     /** admin verification function */
     const verifyAdmin = async (req, res, next) => {
@@ -203,8 +238,27 @@ const run = async () => {
         return res.send({ success: false, booking: exists });
       }
       const result = await bookingsCollection.insertOne(booking);
-      senAppointmentEmail(booking);
+      sendAppointmentEmail(booking);
       return res.send({ success: true, result });
+    });
+
+    /** payment informtion update */
+    app.patch("/booking/:id", async (req, res) => {
+      const id = req.params;
+      const payment = req.body;
+      const filter = { _id: ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          paid: true,
+          trxid: payment.trxid,
+        },
+      };
+      const result = await paymentCollection.insertOne(payment);
+      const updateBooking = await bookingsCollection.updateOne(
+        filter,
+        updateDoc
+      );
+      res.send(updateBooking);
     });
 
     /** post doctor  */
@@ -226,6 +280,18 @@ const run = async () => {
       const filter = { email: email };
       const result = await doctorCollection.deleteOne(filter);
       res.send(result);
+    });
+
+    /** payment itent api */
+    app.post("/create-payment-intent", async (req, res) => {
+      const { price } = req.body;
+      const amount = price * 100;
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        payment_method_types: ["card"],
+      });
+      res.send({ clientSecret: paymentIntent.client_secret });
     });
   } finally {
     /** nothing to happen here */
