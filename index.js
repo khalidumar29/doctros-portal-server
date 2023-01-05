@@ -16,7 +16,7 @@ app.use(express.json());
 
 /** cors middleware */
 const corsOptions = {
-  origin: "http://localhost:3000",
+  origin: "https://doctros-portal-server.vercel.app",
   credentials: true, //access-control-allow-credentials:true
   optionSuccessStatus: 200,
 };
