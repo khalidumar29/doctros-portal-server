@@ -14,6 +14,14 @@ const port = process.env.PORT || 3100;
 app.use(cors());
 app.use(express.json());
 
+/** cors middleware */
+const corsOptions = {
+  origin: "http://localhost:3000",
+  credentials: true, //access-control-allow-credentials:true
+  optionSuccessStatus: 200,
+};
+app.use(cors(corsOptions));
+
 /** connect to mongodb  */
 const uri = `mongodb+srv://${process.env.DB_user}:${process.env.DB_pass}@cluster0.firic.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, {
